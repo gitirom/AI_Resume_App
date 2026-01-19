@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env.*
+.envrc
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Uploaded_Resumes/
+Logo/
