@@ -1,0 +1,4 @@
+uploaded_resumes/
+*.pth
+__pycache__/
+.env

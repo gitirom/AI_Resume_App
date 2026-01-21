@@ -1,0 +1,5 @@
+{
+  "resume_ner": "v1.0",
+  "section_classifier": "v1.0",
+  "quality_scorer": "v1.0"
+}

@@ -1,0 +1,3 @@
+# Configuration settings
+
+# ...add configuration variables here...
