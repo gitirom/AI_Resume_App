@@ -1,0 +1,22 @@
+++ mysql DB schema migration:
+
+- mysql -u your_username -p
+
+- CREATE DATABASE DB_Name;
+
+- exit
+
+- Then:
+        Run sql file inside MySQL Workbench
+
+        Open MySQL Workbench
+
+        Click File → Open SQL Script
+
+        Select your .sql file
+
+        Click Execute (⚡)
+
+        ✔ All tables + inserts will run.
+
+    
