@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from services.pdf_service import extract_text_from_pdf
 from services.text_cleaner import clean_text
 from services.section_detector import detect_sections
+from services.nlp_service import analyze_resume
 import os
 
 app = Flask(__name__)
@@ -38,6 +39,36 @@ def upload_file():
         "sections": sections,
         "cleaned_text": cleaned_text
     })
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    data = request.get_json(silent=True)   #silent: Prevents Flask from throwing an error returns None if JSON is not valid
+
+    if not data or "clean_text" not in data:
+        return jsonify({
+            "error": "Missing required field: clean_text"
+        }), 400
+    
+    clean_text = data.get("clean_text", "").strip()
+
+    if not clean_text:
+        return jsonify({
+            "error": "clean_text cannot be empty"
+        }), 400
+    
+    try:
+        result = analyze_resume(clean_text)
+        return jsonify({
+            "status": "success",
+            "data": result
+        }), 200
+    except Exception as e:
+        print(f"[ERROR] Resume analysis failed: {e}")
+
+        return jsonify({
+            "status": "error",
+            "message": "Resume analysis failed"
+        }), 500
 
 
 if __name__ == "__main__":
