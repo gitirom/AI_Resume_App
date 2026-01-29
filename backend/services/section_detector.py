@@ -1,29 +1,41 @@
 import re
+from typing import List, Dict
 
 SECTION_HEADERS = [
-    "experience",
-    "work experience",
+    "profile",
     "professional experience",
+    "experience",
     "education",
     "projects",
     "skills",
-    "certifications",
-    "summary",
-    "about me",
+    "languages",
+    "publications",
+    "certificates",
+    "volunteer",
 ]
 
+SECTION_PATTERNS = {
+    header: re.compile(
+        rf"(?m)^\s*{re.escape(header)}\s*$",
+        re.IGNORECASE
+    )
+    for header in SECTION_HEADERS
+}
 
-def detect_sections(text):
-    sections = {}
-    lower_text = text.lower()
 
-    for header in SECTION_HEADERS:
-        pattern = rf"{header}[:\n]"
-        match = re.search(pattern, lower_text)
+def detect_sections(text: str) -> List[Dict]:
+
+    sections = []
+
+    for header, pattern in SECTION_PATTERNS.items():
+        match = pattern.search(text)
         if match:
-            start = match.start()
-            sections[header] = start
+            sections.append({
+                "name": header,
+                "start": match.start()
+            })
 
-    sorted_sections = sorted(sections.items(), key=lambda x: x[1])
+    # Sort by document position
+    sections.sort(key=lambda x: x["start"])
 
-    return [s[0] for s in sorted_sections]
+    return sections
