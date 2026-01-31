@@ -10,13 +10,37 @@ PHONE_PATTERN = re.compile(
 )
 
 LINKEDIN_PATTERN = re.compile(
-    r"https?://(?:www\.)?linkedin\.com/[^\s]+",
-    re.IGNORECASE
+    r"""
+    (?:
+        https?://
+        (?:www\.)?
+        linkedin\.com
+        (?:/in/[\w\-_%]+)?     # optional profile path
+    )
+    |
+    \blinkedin\b              # fallback: keyword-only resumes
+    """,
+    re.IGNORECASE | re.VERBOSE
 )
 
 GITHUB_PATTERN = re.compile(
-    r"https?://(?:www\.)?github\.com/[^\s]+",
-    re.IGNORECASE
+    r"""
+    (?:
+        https?://
+        (?:www\.)?
+        github\.com
+        /[\w\-]+               # username
+        (?:/[\w\-\.]+)?        # optional repo
+    )
+    |
+    (?:
+        https?://
+        [\w\-]+\.github\.io    # GitHub Pages
+    )
+    |
+    \bgithub\b                # fallback keyword
+    """,
+    re.IGNORECASE | re.VERBOSE
 )
 
 def extract_contact_info(text: str) -> Dict[str, Optional[str]]:

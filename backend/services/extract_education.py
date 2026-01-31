@@ -3,37 +3,78 @@ import re
 DEGREE_PATTERN = re.compile(
     r"""
     (?P<degree>
-        bachelor|master|ph\.?d|doctorate|
-        b\.?sc|m\.?sc|b\.?eng|m\.?eng|
-        license|licence|engineering|degree
+        (?:
+            Bachelor(?:\s+of\s+[A-Za-z &]+)? |
+            Master(?:\s+of\s+[A-Za-z &]+)? |
+            Doctor(?:ate)?(?:\s+of\s+[A-Za-z &]+)? |
+            Ph\.?\s?D |
+            B\.?\s?Sc(?:\.\s*in\s+[A-Za-z &]+)? |
+            M\.?\s?Sc(?:\.\s*in\s+[A-Za-z &]+)? |
+            B\.?\s?Eng(?:\.\s*in\s+[A-Za-z &]+)? |
+            M\.?\s?Eng(?:\.\s*in\s+[A-Za-z &]+)? |
+            Engineering\s+Degree |
+            Licence |
+            License
+        )
     )
     """,
     re.IGNORECASE | re.VERBOSE
 )
 
-YEAR_PATTERN = re.compile(r"\b(19|20)\d{2}\b")
+YEAR_PATTERN = re.compile(
+    r"""
+    (?P<start>
+        (?:0[1-9]|1[0-2])?/?\s*(19|20)\d{2}
+    )
+    \s*(?:–|—|-|to)\s*
+    (?P<end>
+        Present|
+        Current|
+        (?:0[1-9]|1[0-2])?/?\s*(19|20)\d{2}
+    )
+    """,
+    re.IGNORECASE | re.VERBOSE
+)
+
+SCHOOL_PATTERN = re.compile(
+    r"""
+    ,\s*                    # comma and optional spaces
+    (?P<school>.*?)         # non-greedy match for everything after comma
+    (?=\s*(?:0[1-9]|1[0-2])?/?\s*(?:19|20)\d{2}|$)  # stop before year or end of line
+    """,
+    re.VERBOSE
+)
 
 def extract_education(text: str) -> list[dict]:
     results = []
-    seen = set()
+    
+    # Step 1: Locate EDUCATION section
+    edu_match = re.search(r'EDUCATION\s*(.*?)(?:\n[A-Z][A-Z\s]+|$)', text, re.DOTALL | re.IGNORECASE)
+    if not edu_match:
+        return results  # no education section found
 
-    for line in text.splitlines():
-        clean_line = line.strip()
-        if not clean_line:
-            continue  #Immediately moves to the next iteration
+    edu_text = edu_match.group(1).strip()
+    lines = [l.strip() for l in edu_text.splitlines() if l.strip()]
 
-        if DEGREE_PATTERN.search(clean_line):
-            year_match = YEAR_PATTERN.search(clean_line)
+    for i, line in enumerate(lines):
+        degree_match = DEGREE_PATTERN.search(line)
+        if not degree_match:
+            continue
 
-            entry = {
-                "degree": DEGREE_PATTERN.search(clean_line).group(0),
-                "year": year_match.group(0) if year_match else None,
-                "raw": clean_line
-            }
+        # look for year in the same line or next line
+        year_match = YEAR_PATTERN.search(line)
+        if not year_match and i + 1 < len(lines):
+            year_match = YEAR_PATTERN.search(lines[i + 1])
 
-            key = clean_line.lower()
-            if key not in seen:
-                seen.add(key)
-                results.append(entry)
+        # look for school using SCHOOL_PATTERN
+        school_match = SCHOOL_PATTERN.search(line)
+        school = school_match.group("school").strip() if school_match else None
+
+        results.append({
+            "degree": degree_match.group("degree").strip(),
+            "school": school,
+            "year": year_match.group(0) if year_match else None,
+            "raw": line
+        })
 
     return results
