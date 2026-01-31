@@ -38,12 +38,18 @@ YEAR_PATTERN = re.compile(
 
 SCHOOL_PATTERN = re.compile(
     r"""
-    ,\s*                    # comma and optional spaces
-    (?P<school>.*?)         # non-greedy match for everything after comma
-    (?=\s*(?:0[1-9]|1[0-2])?/?\s*(?:19|20)\d{2}|$)  # stop before year or end of line
+    ,\s*                                   # comma and optional spaces
+    (?P<school>                             # capture school name
+        [A-Z][A-Za-z0-9&.,\-\s]+?         # school name: starts with capital letter
+    )
+    (?=\s*(?:0[1-9]|1[0-2])?/?\s*(?:19|20)\d{2}  # stop before year
+        |$                                 # or end of string
+        |[A-Z][A-Z\s]{2,}                  # or next all-caps section (e.g., PROFESSIONAL EXPERIENCE)
+    )
     """,
     re.VERBOSE
 )
+
 
 def extract_education(text: str) -> list[dict]:
     results = []
