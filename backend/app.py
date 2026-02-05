@@ -3,9 +3,18 @@ from services.pdf_service import extract_text_from_pdf
 from services.text_cleaner import clean_text
 from services.section_detector import detect_sections
 from services.nlp_service import analyze_resume
+from services.job_service import fetch_job_requirements
+from dotenv import load_dotenv
+import logging
 import os
 
+
 app = Flask(__name__)
+
+logger = logging.getLogger(__name__)
+
+load_dotenv()
+
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -68,6 +77,38 @@ def analyze():
         return jsonify({
             "status": "error",
             "message": "Resume analysis failed"
+        }), 500
+    
+
+@app.route("/job-search", methods=["POST"])
+def job_search():
+
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
+    job_title = data.get("job_title")
+
+    if not isinstance(job_title, str) or not job_title.strip():
+        return jsonify({"error": "job_title must be a non-empty string"}), 400
+
+    job_title = job_title.strip()
+
+    try:
+        result = fetch_job_requirements(job_title)
+
+        return jsonify({
+            "status": "success",
+            "data": result
+        }), 200
+
+    except Exception as e:
+        logger.exception("Job search failed")
+
+        return jsonify({
+            "status": "error",
+            "message": "Failed to fetch job requirements"
         }), 500
 
 
