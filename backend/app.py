@@ -4,6 +4,7 @@ from services.text_cleaner import clean_text
 from services.section_detector import detect_sections
 from services.nlp_service import analyze_resume
 from services.job_service import fetch_job_requirements
+from nlp.chunking import ChunkingService
 from dotenv import load_dotenv
 import logging
 import os
@@ -18,6 +19,8 @@ load_dotenv()
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+chunker = ChunkingService()
 
 
 @app.route("/upload", methods=["POST"])
@@ -110,7 +113,54 @@ def job_search():
             "status": "error",
             "message": "Failed to fetch job requirements"
         }), 500
+    
+@app.route("/chunk/resume", methods=["POST"])
+def chunk_resume():
+    data = request.get_json(silent=True)
 
+    if not data or "resume_text" not in data:
+        return jsonify({"error": "Missing required field: resume_text"}), 400
+    
+    resume_text = data.get("resume_text", "").strip()
+    if not resume_text:
+        return jsonify({"error": "resume_text cannot be empty"}), 400
+    
+    try:
+        chunks = chunker.chunk_resume(resume_text)
+        return jsonify({
+            "status": "success",
+            "data": chunks
+        }), 200
+    except Exception as e:
+        logger.exception("Resume chunking failed")
+        return jsonify({
+            "status": "error",
+            "message": "Failed to chunk resume text"
+        }), 500
+    
+@app.route("/chunk/job", methods=["POST"])
+def chunk_job_description():
+    data = request.get_json(silent=True)
+
+    if not data or "job_description" not in data:
+        return jsonify({"error": "Missing required field: job_description"}), 400
+
+    job_description = data.get("job_description", "").strip()
+    if not job_description:
+        return jsonify({"error": "job_description cannot be empty"}), 400
+
+    try:
+        chunks = chunker.chunk_job_description(job_description)
+        return jsonify({
+            "status": "success",
+            "chunks": chunks
+        }), 200
+    except Exception as e:
+        logger.exception("Job description chunking failed")
+        return jsonify({
+            "status": "error",
+            "message": "Failed to chunk job description"
+        }), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
